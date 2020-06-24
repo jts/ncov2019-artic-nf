@@ -10,7 +10,7 @@ include printHelp from './modules/help.nf'
 include {articNcovNanopore} from './workflows/articNcovNanopore.nf' 
 include {ncovIllumina} from './workflows/illuminaNcov.nf'
 include {ncovIlluminaCram} from './workflows/illuminaNcov.nf'
-include {getSampleId; prepareFastqPair; performHostFilter} from './modules/utils'
+include {performHostFilter} from './modules/utils'
 
 if (params.help){
     printHelp()
