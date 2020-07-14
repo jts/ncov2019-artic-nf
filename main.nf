@@ -10,7 +10,6 @@ include printHelp from './modules/help.nf'
 include {articNcovNanopore} from './workflows/articNcovNanopore.nf' 
 include {ncovIllumina} from './workflows/illuminaNcov.nf'
 include {ncovIlluminaCram} from './workflows/illuminaNcov.nf'
-include {performHostFilter} from './modules/utils'
 
 if (params.help){
     printHelp()
@@ -74,8 +73,6 @@ if ( ! params.prefix ) {
 workflow {
 
    if ( params.illumina ) {
-       performHostFilter(prepareFastqPair.out)
-
        if (params.cram) {
            Channel.fromPath( "${params.directory}/**.cram" )
                   .map { file -> tuple(file.baseName, file) }
