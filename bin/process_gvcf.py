@@ -39,11 +39,8 @@ def main():
     parser.add_argument('-m', '--mask-output', required=True,
             help=f"The output file name for the coverage mask\n")
     
-    parser.add_argument('-a', '--ambiguous-variant-output', required=True,
-            help=f"The output file name for variants that will be masked with IUPAC ambiguity codes\n")
-    
-    parser.add_argument('-c', '--consensus-output', required=True,
-            help=f"The output file name for variants with consensus variants (including indels)\n")
+    parser.add_argument('-v', '--variants-output', required=True,
+            help=f"The output file name for variants (non-reference gVCF records)\n")
 
     parser.add_argument('-d', '--min-depth', type=int, default=10,
             help=f"Mask reference positions with depth less than this threshold")
@@ -66,8 +63,12 @@ def main():
             contig_depth[r['ID']] = [0] * int(r['length'])
 
     # 
-    ambiguous_out = pysam.VariantFile(args.ambiguous_variant_output,'w',header=vcf.header)
-    consensus_out = pysam.VariantFile(args.consensus_output,'w',header=vcf.header)
+    #ambiguous_out = pysam.VariantFile(args.ambiguous_variant_output,'w',header=vcf.header)
+
+    out_header = vcf.header
+    out_header.info.add("VAF", number=1, type='Float', description="Variant allele fraction, called from observed reference/alt reads")
+    out_header.info.add("ConsensusTag", number=1, type='String', description="The type of base to be included in the consensus sequence (IUPAC or Fixed)")
+    variants_out = pysam.VariantFile(args.variants_output,'w',header=out_header)
 
     for record in vcf:
 
@@ -101,16 +102,21 @@ def main():
         ref_reads = int(record.info["RO"])
         alt_reads = int(record.info["AO"][0])
 
-        af = float(alt_reads) / float(ref_reads + alt_reads)
+        vaf = float(alt_reads) / float(ref_reads + alt_reads)
 
         # discard lower frequency variants entirely
-        if af < args.lower_ambiguity_frequency:
+        if vaf < args.lower_ambiguity_frequency:
             continue
     
-        if record.info["TYPE"] == "indel" or af > args.upper_ambiguity_frequency:
-            consensus_out.write(record)
+        record.info["VAF"] = vaf
+        
+        consensus_tag = "None"
+        if record.info["TYPE"] == "indel" or vaf > args.upper_ambiguity_frequency:
+            consensus_tag = "fixed"
         else:
-            ambiguous_out.write(record)
+            consensus_tag = "ambiguous"
+        record.info["ConsensusTag"] = consensus_tag
+        variants_out.write(record)
 
     write_depth_mask(args.mask_output, contig_depth, args.min_depth)
     #print(contig_depth["MN908947.3"])
