@@ -51,9 +51,6 @@ def main():
     parser.add_argument('-u', '--upper-ambiguity-frequency', type=float, default=0.75,
             help=f"Substitution variants with frequency less than -u will be encoded with IUPAC ambiguity codes")
     
-    parser.add_argument('-q', '--min-variant-quality', type=float, default=50,
-            help=f"The minimum variant quality to use in the consensus")
-
     parser.add_argument('file', action='store', nargs=1)
     
     args = parser.parse_args()
@@ -104,8 +101,8 @@ def main():
         alt_reads = int(record.info["AO"][0])
         vaf = float(alt_reads) / float(record.info["DP"])
 
-        # discard low frequency and low quality variants variants 
-        if vaf < args.lower_ambiguity_frequency or record.qual < args.min_variant_quality:
+        # discard low frequency
+        if vaf < args.lower_ambiguity_frequency or depth < args.min_depth:
             continue
     
         is_indel = len(record.ref) != len(record.alts[0])
