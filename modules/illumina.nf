@@ -9,7 +9,7 @@ process readTrimming {
 
     publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: '*_val_{1,2}.fq.gz', mode: 'copy'
 
-    cpus 2
+    cpus 1
 
     input:
     tuple(sampleName, path(forward), path(reverse))
@@ -38,7 +38,7 @@ process filterResidualAdapters {
 
     publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: '*{1,2}_posttrim_filter.fq.gz', mode: 'copy'
 
-    cpus 2
+    cpus 1
 
     input:
     tuple(sampleName, path(forward), path(reverse))
@@ -187,6 +187,8 @@ process callConsensusFreebayes {
 
     script:
         """
+        # TODO: use variant frequency parameters
+
         # the sed is to fix the header until a release is made with this fix
         # https://github.com/freebayes/freebayes/pull/549
         freebayes -p 1 -f ${ref} -F 0.2 -C 1 --pooled-continuous --min-coverage ${params.ivarMinDepth} \

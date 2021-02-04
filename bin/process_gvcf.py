@@ -50,6 +50,9 @@ def main():
     
     parser.add_argument('-u', '--upper-ambiguity-frequency', type=float, default=0.75,
             help=f"Substitution variants with frequency less than -u will be encoded with IUPAC ambiguity codes")
+    
+    parser.add_argument('-q', '--min-variant-quality', type=float, default=50,
+            help=f"The minimum variant quality to use in the consensus")
 
     parser.add_argument('file', action='store', nargs=1)
     
@@ -62,9 +65,6 @@ def main():
         if r.type == "CONTIG":
             contig_depth[r['ID']] = [0] * int(r['length'])
 
-    # 
-    #ambiguous_out = pysam.VariantFile(args.ambiguous_variant_output,'w',header=vcf.header)
-
     out_header = vcf.header
     out_header.info.add("VAF", number=1, type='Float', description="Variant allele fraction, called from observed reference/alt reads")
     out_header.info.add("ConsensusTag", number=1, type='String', description="The type of base to be included in the consensus sequence (IUPAC or Fixed)")
@@ -72,8 +72,10 @@ def main():
 
     for record in vcf:
 
-        #TODO: handle multi-allelic
-        assert(len(record.alts) == 1)
+        #TODO: handle multi-allelic better
+        num_alleles = len(record.alts)
+        if num_alleles > 1:
+            sys.stderr.write("Warning: multi-allelic site\n")
 
         is_gvcf_ref = record.alts[0] == "<*>"
         #print(is_gvcf_ref, record.alts[0])
@@ -98,22 +100,27 @@ def main():
         if is_gvcf_ref:
             continue
 
-        # get reads the support ref/alt haplotype
-        ref_reads = int(record.info["RO"])
+        # calculate VAF
         alt_reads = int(record.info["AO"][0])
+        vaf = float(alt_reads) / float(record.info["DP"])
 
-        vaf = float(alt_reads) / float(ref_reads + alt_reads)
-
-        # discard lower frequency variants entirely
-        if vaf < args.lower_ambiguity_frequency:
+        # discard low frequency and low quality variants variants 
+        if vaf < args.lower_ambiguity_frequency or record.qual < args.min_variant_quality:
             continue
     
+        is_indel = len(record.ref) != len(record.alts[0])
         record.info["VAF"] = vaf
-        
         consensus_tag = "None"
-        if record.info["TYPE"] == "indel" or vaf > args.upper_ambiguity_frequency:
+
+        # Write a tag describing what to do with the variant
+        if vaf > args.upper_ambiguity_frequency or (is_indel and vaf >= 0.5):
+            # always apply these to the consensus
             consensus_tag = "fixed"
+        elif is_indel:
+            # we can't represent ambiguous indels so they get this tag and are not applied to the consensus
+            consensus_tag = "low_frequency_indel"
         else:
+            # record ambiguous SNPs in the consensus sequence with IUPAC codes
             consensus_tag = "ambiguous"
         record.info["ConsensusTag"] = consensus_tag
         variants_out.write(record)

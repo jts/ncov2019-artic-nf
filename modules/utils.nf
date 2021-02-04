@@ -1,5 +1,5 @@
 process performHostFilter {
-    cpus 4
+    cpus 1
     
     input:
         tuple(val(sampleId), path(forward), path(reverse))
