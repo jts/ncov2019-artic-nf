@@ -63,16 +63,11 @@ def main():
             contig_depth[r['ID']] = [0] * int(r['length'])
 
     out_header = vcf.header
-    out_header.info.add("VAF", number=1, type='Float', description="Variant allele fraction, called from observed reference/alt reads")
+    out_header.info.add("VAF", number="A", type='Float', description="Variant allele fraction, called from observed reference/alt reads")
     out_header.info.add("ConsensusTag", number=1, type='String', description="The type of base to be included in the consensus sequence (IUPAC or Fixed)")
     variants_out = pysam.VariantFile(args.variants_output,'w',header=out_header)
 
     for record in vcf:
-
-        #TODO: handle multi-allelic better
-        num_alleles = len(record.alts)
-        if num_alleles > 1:
-            sys.stderr.write("Warning: multi-allelic site\n")
 
         is_gvcf_ref = record.alts[0] == "<*>"
         #print(is_gvcf_ref, record.alts[0])
@@ -97,20 +92,36 @@ def main():
         if is_gvcf_ref:
             continue
 
-        # calculate VAF
-        alt_reads = int(record.info["AO"][0])
-        vaf = float(alt_reads) / float(record.info["DP"])
+        # calculate VAF for each allele
+        vafs = list()
+        total_depth = float(record.info["DP"])
+        sum_vaf = 0.0
+        max_vaf = 0.0
+        max_idx = -1
+        for i in range(0, len(record.alts)):
+            alt_reads = int(record.info["AO"][i])
+            vaf = float(alt_reads) / float(record.info["DP"])
+            if vaf > max_vaf:
+                max_vaf = vaf
+                max_idx = i
+
+            vafs.append(vaf)
+            sum_vaf += vaf
+
+        # check the assumption that freebayes writes the alleles in VAF order
+        assert(max_idx == 0)
 
         # discard low frequency
-        if vaf < args.lower_ambiguity_frequency or depth < args.min_depth:
+        if vafs[max_idx] < args.lower_ambiguity_frequency or depth < args.min_depth:
             continue
     
         is_indel = len(record.ref) != len(record.alts[0])
-        record.info["VAF"] = vaf
+        record.info["VAF"] = vafs
         consensus_tag = "None"
 
         # Write a tag describing what to do with the variant
-        if vaf > args.upper_ambiguity_frequency or (is_indel and vaf >= 0.5):
+        # For indels we use the summed VAF across all alleles to handle multi-allelic indels (e.g. CTTT ->  CTT, CT)
+        if vafs[max_idx] > args.upper_ambiguity_frequency or (is_indel and sum_vaf >= 0.5):
             # always apply these to the consensus
             consensus_tag = "fixed"
         elif is_indel:
@@ -123,6 +134,6 @@ def main():
         variants_out.write(record)
 
     write_depth_mask(args.mask_output, contig_depth, args.min_depth)
-    #print(contig_depth["MN908947.3"])
+
 if __name__ == "__main__":
     main()
