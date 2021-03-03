@@ -108,9 +108,6 @@ def main():
             vafs.append(vaf)
             sum_vaf += vaf
 
-        # check the assumption that freebayes writes the alleles in VAF order
-        assert(max_idx == 0)
-
         # discard low frequency
         if vafs[max_idx] < args.lower_ambiguity_frequency or depth < args.min_depth:
             continue
