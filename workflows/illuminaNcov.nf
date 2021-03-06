@@ -92,9 +92,10 @@ workflow sequenceAnalysis {
 
       trimPrimerSequences(readMapping.out.combine(ch_bedFile))
 
-      callConsensusFreebayes(trimPrimerSequences.out.ptrim.combine(ch_preparedRef.map{ it[0] }))     
+      freebayes_out = callConsensusFreebayes(trimPrimerSequences.out.ptrim.combine(ch_preparedRef.map{ it[0] }))     
+      freebayes_consensus_out = freebayes_out[0]
 
-      makeQCCSV(trimPrimerSequences.out.ptrim.join(callConsensusFreebayes.out, by: 0)
+      makeQCCSV(trimPrimerSequences.out.ptrim.join(freebayes_consensus_out, by: 0)
                                    .combine(ch_preparedRef.map{ it[0] }))
 
       makeQCCSV.out.csv.splitCsv()
@@ -109,7 +110,7 @@ workflow sequenceAnalysis {
       writeQCSummaryCSV(qc.header.concat(qc.pass).concat(qc.fail).toList())
 
       collateSamples(qc.pass.map{ it[0] }
-                           .join(callConsensusFreebayes.out, by: 0)
+                           .join(freebayes_consensus_out, by: 0)
                            .join(trimPrimerSequences.out.mapped))
 
       if (params.outCram) {

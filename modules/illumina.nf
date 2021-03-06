@@ -182,7 +182,8 @@ process callConsensusFreebayes {
     tuple(sampleName, path(bam), path(ref))
 
     output:
-    tuple(sampleName, path("${sampleName}.consensus.fasta"))
+    tuple sampleName, path("${sampleName}.consensus.fasta")
+    tuple sampleName, path("${sampleName}.variants.norm.vcf")
 
     script:
         """
