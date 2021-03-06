@@ -10,8 +10,6 @@ include {filterResidualAdapters} from '../modules/illumina.nf'
 include {indexReference} from '../modules/illumina.nf'
 include {readMapping} from '../modules/illumina.nf' 
 include {trimPrimerSequences} from '../modules/illumina.nf' 
-include {callVariants} from '../modules/illumina.nf'
-include {makeConsensus} from '../modules/illumina.nf' 
 include {callConsensusFreebayes} from '../modules/illumina.nf' 
 include {cramToFastq} from '../modules/illumina.nf'
 include {performHostFilter} from '../modules/utils'
@@ -94,13 +92,9 @@ workflow sequenceAnalysis {
 
       trimPrimerSequences(readMapping.out.combine(ch_bedFile))
 
-      callVariants(trimPrimerSequences.out.ptrim.combine(ch_preparedRef.map{ it[0] }))     
-
-      makeConsensus(trimPrimerSequences.out.ptrim)
-      
       callConsensusFreebayes(trimPrimerSequences.out.ptrim.combine(ch_preparedRef.map{ it[0] }))     
 
-      makeQCCSV(trimPrimerSequences.out.ptrim.join(makeConsensus.out, by: 0)
+      makeQCCSV(trimPrimerSequences.out.ptrim.join(callConsensusFreebayes.out, by: 0)
                                    .combine(ch_preparedRef.map{ it[0] }))
 
       makeQCCSV.out.csv.splitCsv()
@@ -115,13 +109,12 @@ workflow sequenceAnalysis {
       writeQCSummaryCSV(qc.header.concat(qc.pass).concat(qc.fail).toList())
 
       collateSamples(qc.pass.map{ it[0] }
-                           .join(makeConsensus.out, by: 0)
-                           .join(trimPrimerSequences.out.mapped))     
+                           .join(callConsensusFreebayes.out, by: 0)
+                           .join(trimPrimerSequences.out.mapped))
 
       if (params.outCram) {
         bamToCram(qc.pass.map{ it[0] } 
                         .join (trimPrimerSequences.out.ptrim.combine(ch_preparedRef.map{ it[0] })) )
-
       }
 
     emit:

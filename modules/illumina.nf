@@ -182,13 +182,10 @@ process callConsensusFreebayes {
     tuple(sampleName, path(bam), path(ref))
 
     output:
-    tuple sampleName, path("${sampleName}.consensus.fasta")
-    tuple sampleName, path("${sampleName}.variants.norm.vcf")
+    tuple(sampleName, path("${sampleName}.consensus.fasta"))
 
     script:
         """
-        # TODO: use variant frequency parameters
-
         # the sed is to fix the header until a release is made with this fix
         # https://github.com/freebayes/freebayes/pull/549
         freebayes -p 1 \
