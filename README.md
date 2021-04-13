@@ -5,6 +5,7 @@ WARNING - THIS REPO IS UNDER ACTIVE DEVELOPMENT AND ITS BEHAVIOUR MAY CHANGE AT 
 
 PLEASE ENSURE THAT YOU READ BOTH THE README AND THE CONFIG FILE AND UNDERSTAND THE EFFECT OF THE OPTIONS ON YOUR DATA! 
 
+This version was forked from [COG-UK](https://github.com/connor-lab/ncov2019-artic-nf) and customized for CanCOGeN-VirusSeq by adding a dehosting step, and additional artifact filtering steps.The variant/consensus caller has been changed from ivar to freebayes to improve variant calling around indels.
 
 #### Introduction
 
@@ -15,21 +16,21 @@ This Nextflow pipeline automates the ARTIC network [nCoV-2019 novel coronavirus 
 
 #### Quick-start
 ##### Illumina
-`nextflow run connor-lab/ncov2019-artic-nf [-profile conda,singularity,docker,slurm,lsf] --illumina --prefix "output_file_prefix" --directory /path/to/reads`
 
-You can also use cram file input by passing the --cram flag.
-You can also specify cram file output by passing the --outCram flag.
+```
+nextflow run /path/to/repo/ncov2019-artic-nf [-profile conda,singularity,docker,slurm,lsf] \
+             --illumina \
+             --prefix "output_file_prefix" \
+             --directory /path/to/reads \
+             --bed /path/to/resources/nCoV-2019_v3_fixed.bed \
+             --primer_pairs_tsv /path/to/resources/nCoV-2019_outer_primernames.tsv \
+             --ref /path/to/resources/nCoV-2019.reference.fasta \
+             --composite_ref /path/to/resources/composite_human_virus_reference.fasta \
+             --viral_contig_name MN908947.3 \
+             --cpus 8
+```
 
-For production use at large scale, where you will run the workflow many times, you can avoid cloning the scheme repository, creating an ivar bed file and indexing the reference every time by supplying both --ivarBed /path/to/ivar-compatible.bed and --alignerRefPrefix /path/to/bwa-indexed/ref.fa.
-
-Alternatively you can avoid just the cloning of the scheme repository to remain on a fixed revision of it over time by passing --schemeRepoURL /path/to/own/clone/of/github.com/artic-network/artic-ncov2019. This removes any internet access from the workflow except for the optional upload steps.
-
-##### Nanopore
-###### Nanopolish
-`nextflow run connor-lab/ncov2019-artic-nf [-profile conda,singularity,docker,slurm,lsf] --nanopolish --prefix "output_file_prefix" --basecalled_fastq /path/to/directory --fast5_pass /path/to/directory --sequencing_summary /path/to/sequencing_summary.txt`
-
-###### Medaka
- `nextflow run connor-lab/ncov2019-artic-nf [-profile conda,singularity,docker,slurm,lsf] --medaka --prefix "output_file_prefix" --basecalled_fastq /path/to/directory --fast5_pass /path/to/directory --sequencing_summary /path/to/sequencing_summary.txt`
+The `composite_ref` and `viral_contig_name` options control the dehosting process. The composite reference genome should be created by merging the SARS-CoV-2 reference genome with the human reference genome ([here](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz)) then indexing it with `bwa index`. The `primer_pairs_tsv` argument is a simple two-column tab-delimited file describing the outer pair of primers for each amplicon. This allows additional amplification artifact filtering. 
 
 #### Installation
 An up-to-date version of Nextflow is required because the pipeline is written in DSL2. Following the instructions at https://www.nextflow.io/ to download and install Nextflow should get you a recent-enough version. 
@@ -65,7 +66,8 @@ guppy_barcoder --require_barcodes_both_ends -i run_name -s output_directory --ar
 ```
 
 ###### Illumina
-The Illumina workflow leans heavily on the excellent [ivar](https://github.com/andersen-lab/ivar) for primer trimming and consensus making. This workflow will be updated to follow ivar, as its also in very active development! Use `--illumina` to run the Illumina workflow. Use `--directory` to point to an Illumina output directory usually coded something like: `<date>_<machine_id>_<run_no>_<some_zeros>_<flowcell>`. The workflow will recursively grab all fastq files under this directory, so be sure that what you want is in there, and what you don't, isn't! 
+
+Use `--illumina` to run the Illumina workflow. Use `--directory` to point to an Illumina output directory usually coded something like: `<date>_<machine_id>_<run_no>_<some_zeros>_<flowcell>`. The workflow will recursively grab all fastq files under this directory, so be sure that what you want is in there, and what you don't, isn't! 
 
 Important config options are:
 
@@ -75,11 +77,8 @@ Important config options are:
 |illuminaKeepLen | Length of illumina reads to keep after primer trimming|
 |illuminaQualThreshold | Sliding window quality threshold for keeping reads after primer trimming (illumina)|
 |mpileupDepth | Mpileup depth for ivar|
-|ivarFreqThreshold | ivar frequency threshold for variant|
-|ivarMinDepth | Minimum coverage depth to call variant|
-
-#### QC
-A script to do some basic COG-UK QC is provided in `bin/qc.py`. This currently tests if >50% of reference bases are covered by >10 reads (Illumina) or >20 reads (Nanopore), OR if there is a stretch of more than 10 Kb of sequence without N - setting qc_pass in `<outdir>/<prefix>.qc.csv` to TRUE. `bin/qc.py` can be extended to incorporate any QC test, as long as the script outputs a csv file a "qc_pass" last column, with samples TRUE or FALSE.
+|varFreqThreshold | frequency threshold for variants|
+|varMinDepth | Minimum coverage depth to call variants|
 
 #### Output
-A subdirectory for each process in the workflow is created in `--outdir`. A `qc_pass_climb_upload` subdirectory containing files important for [COG-UK](https://github.com/COG-UK) is created. 
+A subdirectory for each process in the workflow is created in `--outdir`. 
