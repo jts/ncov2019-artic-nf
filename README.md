@@ -1,7 +1,7 @@
 # ncov2019-artic-nf
 A Nextflow pipeline for running the ARTIC network's fieldbioinformatics tools (https://github.com/artic-network/fieldbioinformatics), with a focus on ncov2019.
 
-This version was forked from [COG-UK](https://github.com/connor-lab/ncov2019-artic-nf) and customized for CanCOGeN-VirusSeq by adding a dehosting step, switching the variant caller from ivar to freebayes, and adding additional artifact filtering steps. 
+This version was forked from [COG-UK](https://github.com/connor-lab/ncov2019-artic-nf) and customized for CanCOGeN-VirusSeq by adding a dehosting step, switching the variant caller from ivar to freebayes, and adding additional artifact filtering steps. This version is specialized for the Illumina workflow. While the nanopore support is retained unchanged from the COG-UK version. If running the workflow on nanopore data we recommend you use the upstream COG-UK version instaed.
 
 #### Introduction
 
@@ -30,35 +30,15 @@ The `composite_ref` and `viral_contig_name` options control the dehosting proces
 #### Installation
 An up-to-date version of Nextflow is required because the pipeline is written in DSL2. Following the instructions at https://www.nextflow.io/ to download and install Nextflow should get you a recent-enough version. 
 
-#### Containers
-This repo contains both [Singularity]("https://sylabs.io/guides/3.0/user-guide/index.html") and Dockerfiles. You can build the Singularity containers locally by running `scripts/build_singularity_containers.sh` and use them with `-profile singularity` The containers will be available from Docker/Singularityhub shortly.
-
 #### Conda
+
 The repo contains a environment.yml files which automatically build the correct conda env if `-profile conda` is specifed in the command. Although you'll need `conda` installed, this is probably the easiest way to run this pipeline.
 
---cache /some/dir can be specified to have a fixed, shared location to store the conda build for use by multiple runs of the workflow.
-
-#### Executors
-By default, the pipeline just runs on the local machine. You can specify `-profile slurm` to use a SLURM cluster, or `-profile lsf` to use an LSF cluster. In either case you may need to also use one of the COG-UK institutional config profiles (phw or sanger), or provide queue names to use in your own config file.
-
-#### Profiles
-You can use multiple profiles at once, separating them with a comma. This is described in the Nextflow [documentation](https://www.nextflow.io/docs/latest/config.html#config-profiles) 
-
 #### Config
+
 Common configuration options are set in `conf/base.config`. Workflow specific configuration options are set in `conf/nanopore.config` and `conf/illumina.config` They are described and set to sensible defaults (as suggested in the [nCoV-2019 novel coronavirus bioinformatics protocol](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html "nCoV-2019 novel coronavirus bioinformatics protocol"))
 
-##### Options
-- `--outdir` sets the output directory.
-- `--bwa` to swap to bwa for mapping (nanopore only).
-
 ##### Workflows
-
-###### Nanopore
-Use `--nanopolish` or `--medaka` to run these workflows. `--basecalled_fastq` should point to a directory created by `guppy_basecaller` (if you ran with no barcodes), or `guppy_barcoder` (if you ran with barcodes). It is imperative that the following `guppy_barcoder` command be used for demultiplexing:
-
-```
-guppy_barcoder --require_barcodes_both_ends -i run_name -s output_directory --arrangements_files "barcode_arrs_nb12.cfg barcode_arrs_nb24.cfg"
-```
 
 ###### Illumina
 
