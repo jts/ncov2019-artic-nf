@@ -1,7 +1,7 @@
 # ncov2019-artic-nf
 A Nextflow pipeline for running the ARTIC network's fieldbioinformatics tools (https://github.com/artic-network/fieldbioinformatics), with a focus on ncov2019.
 
-This version was forked from [COG-UK](https://github.com/connor-lab/ncov2019-artic-nf) and customized for CanCOGeN-VirusSeq by adding a dehosting step, switching the variant caller from ivar to freebayes, and adding additional artifact filtering steps. This version is specialized for the Illumina workflow - nanopore support is retained unchanged from the COG-UK version. 
+This version was forked from [COG-UK](https://github.com/connor-lab/ncov2019-artic-nf) and customized for CanCOGeN-VirusSeq by adding a dehosting step, switching the variant caller from ivar to freebayes, and adding additional artifact filtering steps. This version is specialized for the Illumina workflow - nanopore support is retained unchanged from the COG-UK version. This documentation focuses on the differences in functionality from the COG-UK version linked above. 
 
 #### Introduction
 
