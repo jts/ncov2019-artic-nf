@@ -30,7 +30,7 @@ nextflow run /path/to/repo/ncov2019-artic-nf [-profile conda,singularity,docker,
              --cpus 8
 ```
 
-The `composite_ref` and `viral_contig_name` options control the dehosting process. The composite reference genome should be created by merging the SARS-CoV-2 reference genome with the human reference genome ([here](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz)) then indexing it with `bwa index`. The `primer_pairs_tsv` argument is a simple two-column tab-delimited file describing the outer pair of primers for each amplicon. This allows additional amplification artifact filtering. 
+The `composite_ref` and `viral_contig_name` options control the dehosting process. The composite reference genome should be created by merging the SARS-CoV-2 reference genome with the [human reference genome](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz) then indexing it with `bwa index`. The `primer_pairs_tsv` argument is a simple two-column tab-delimited file describing the outer pair of primers for each amplicon. This allows additional amplification artifact filtering. 
 
 #### Installation
 An up-to-date version of Nextflow is required because the pipeline is written in DSL2. Following the instructions at https://www.nextflow.io/ to download and install Nextflow should get you a recent-enough version. 
